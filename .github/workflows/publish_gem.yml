@@ -1,0 +1,33 @@
+name: Publish Gem to Github Package Registry
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    name: Build and Publish Gem
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Ruby 2.4
+      uses: actions/setup-ruby@v1
+      with:
+        ruby-version: 2.4.x
+
+    - name: Bump and tag release version
+      run: |
+        author_email=$(git show -s --format='%ae' ${GITHUB_SHA})
+        author_name=$(git show -s --format='%an' ${GITHUB_SHA})
+        git config --global user.email ${author_email}
+        git config --global user.name ${author_name}
+        gem install gem-release
+        gem bump --message "Release %{name} version %{version}" --tag
+        git push --follow-tags origin HEAD:${GITHUB_REF}
+    - name: Publish to github
+      uses: jstastny/publish-gem-to-github@master
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        owner: phorest
